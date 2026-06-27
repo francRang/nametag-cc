@@ -4,6 +4,24 @@ A self-updating CLI. On startup it checks GitHub Releases for a newer version,
 downloads it, verifies its SHA-256 checksum, replaces the running binary, and
 restarts itself.
 
+## How it works
+
+```mermaid
+flowchart TD
+    A([Start]) --> B[Print version banner]
+    B --> C[CheckAndUpdate]
+    C --> D{Newer release\non GitHub?}
+    D -- No --> E[Schedule background checks]
+    D -- Yes --> F[Download platform binary]
+    F --> G[Verify SHA-256 checksum]
+    G --> H[Replace running binary]
+    H --> I[Restart process]
+    I -.->|new process| A
+    E --> J[Main loop]
+    J -- interval or cron fires --> C
+    J -- SIGINT / SIGTERM --> K([Shutdown])
+```
+
 ## Installation
 
 Install to a directory you own so the program can replace itself on update.
