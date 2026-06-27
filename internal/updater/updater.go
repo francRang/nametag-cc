@@ -12,7 +12,9 @@
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
-//	go u.RunBackground(ctx, 5*time.Minute, 24*time.Hour)
+//	if err := u.CheckAndUpdate(ctx); err != nil {
+//	    log.Warn("update check failed", "error", err)
+//	}
 package updater
 
 import (
