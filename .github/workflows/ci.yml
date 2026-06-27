@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  # Run the full test suite on all three target operating systems so that
+  # platform-specific code (replace_unix.go, replace_windows.go,
+  # cleanup_windows.go) is exercised on real runners rather than relying
+  # solely on cross-compilation.
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false # let all three finish so we see the full picture
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -count=1 ./...
+
+  # ── Cross-compilation ──────────────────────────────────────────────────────
+  # Verify that all five release targets compile cleanly. This catches missing
+  # build-constraint stubs before they reach a real release. We use a fake
+  # version so that ldflags injection is exercised in CI.
+  cross-compile:
+    name: Cross-compile all platforms
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build all platforms
+        run: make release VERSION=0.0.0-ci
+
+  # ── Release ────────────────────────────────────────────────────────────────
+  # Triggered only when a "v*" tag is pushed. Builds the release binaries,
+  # generates checksums.txt, and uploads everything to a GitHub Release.
+  # The `test` and `cross-compile` jobs must pass first.
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [test, cross-compile]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write # needed to create and upload release assets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build release binaries
+        run: make release VERSION=${{ github.ref_name }}
+
+      - name: Generate checksums
+        run: make checksums
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
