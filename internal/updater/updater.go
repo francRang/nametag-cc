@@ -117,6 +117,26 @@ func (u *Updater) CheckAndUpdate(ctx context.Context) error {
 	return nil
 }
 
+// RunBackground starts a goroutine that calls CheckAndUpdate every interval.
+// The first check fires after one full interval — the startup check already ran.
+// Errors are logged but do not stop the loop. Exits when ctx is cancelled.
+func (u *Updater) RunBackground(ctx context.Context, interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				if err := u.CheckAndUpdate(ctx); err != nil {
+					u.log.Warn("background update check failed", "error", err)
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
 // apply downloads the release asset for the current platform, optionally verifies
 // its SHA-256 checksum, then replaces the running binary and restarts.
 func (u *Updater) apply(ctx context.Context, release *githubRelease) error {

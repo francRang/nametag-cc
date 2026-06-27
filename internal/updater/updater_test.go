@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // roundTripFunc implements http.RoundTripper via a plain function.
@@ -256,6 +257,32 @@ func TestCheckAndUpdate_DevBuildSkipped(t *testing.T) {
 	}
 	if replaceCalled {
 		t.Error("replaceFn should NOT be called for dev builds")
+	}
+}
+
+func TestRunBackground_FiresAfterInterval(t *testing.T) {
+	called := make(chan struct{}, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case called <- struct{}{}:
+		default:
+		}
+		// Return same version so no update is attempted.
+		json.NewEncoder(w).Encode(githubRelease{TagName: "v1.0.0"})
+	}))
+	defer srv.Close()
+
+	u := newTestUpdater(t, srv)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	u.RunBackground(ctx, 10*time.Millisecond)
+
+	select {
+	case <-called:
+		// success
+	case <-time.After(2 * time.Second):
+		t.Fatal("RunBackground did not fire within 2s")
 	}
 }
 

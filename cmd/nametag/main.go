@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -14,6 +15,9 @@ import (
 )
 
 func main() {
+	interval := flag.Duration("interval", time.Hour, "how often to poll for updates (e.g. 30s, 5m, 1h)")
+	flag.Parse()
+
 	fmt.Println(version.String())
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
@@ -41,7 +45,8 @@ func main() {
 		logger.Warn("update check failed", "error", err)
 	}
 
-	logger.Info("running", "version", version.Version)
+	logger.Info("running", "version", version.Version, "update_interval", interval)
+	upd.RunBackground(ctx, *interval)
 
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()

@@ -45,6 +45,16 @@ The release must include assets named:
 
 Plus a `checksums.txt` (SHA-256) for integrity verification.
 
+## Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `-interval` | `1h` | How often to poll for updates. Accepts `s`, `m`, or `h` units. |
+
+```bash
+nametag -interval 30m
+```
+
 ## Testing
 
 ```bash
