@@ -21,7 +21,7 @@ func main() {
 	}))
 
 	upd, err := updater.New(updater.Config{
-		Owner:          "franc",
+		Owner:          "francRang",
 		Repo:           "nametag-cc",
 		CurrentVersion: version.Version,
 		Logger:         logger,
