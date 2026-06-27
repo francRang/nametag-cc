@@ -47,6 +47,10 @@ internal/updater/
 - `RunBackground` polls on a ticker after the startup check. The interval is
   controlled by the `-interval` flag (default 1h). Accepts any `time.Duration`
   string: `30s`, `5m`, `1h`, etc.
+- `-cron` is an alternative to `-interval` for cron expression-based scheduling
+  (e.g. `"0 9 * * 1-5"`). The two flags are mutually exclusive; passing both
+  exits with an error. Cron scheduling lives entirely in `main.go` — the
+  `updater` package is unaware of it.
 
 **No no-ops in the `updater` package**
 - Windows startup cleanup (`*.old` removal) lives in `cmd/nametag/cleanup_windows.go`
@@ -57,9 +61,11 @@ internal/updater/
 - All configuration is injected at build time via `-ldflags`. There is no config
   file, no environment variables, and no flags. Keep it that way.
 
-**No extra dependencies**
-- The only external dependency is `golang.org/x/mod` (for `semver`). Do not add
-  third-party packages without a strong justification.
+**Dependencies**
+- `golang.org/x/mod` — semver comparison.
+- `github.com/netresearch/go-cron` — cron scheduling for the `-cron` flag.
+  Used only in `cmd/nametag/main.go`; the `updater` package has no dependency on it.
+  Do not add further third-party packages without strong justification.
 
 **Install to user-owned directories**
 - Self-update requires write access to the binary's location. The recommended

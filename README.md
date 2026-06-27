@@ -50,9 +50,12 @@ Plus a `checksums.txt` (SHA-256) for integrity verification.
 | Flag | Default | Description |
 |---|---|---|
 | `-interval` | `1h` | How often to poll for updates. Accepts `s`, `m`, or `h` units. |
+| `-cron` | — | Cron expression for update schedule. Mutually exclusive with `-interval`. |
 
 ```bash
 nametag -interval 30m
+nametag -cron "0 * * * *"   # every hour on the hour
+nametag -cron "0 9 * * 1-5" # 09:00 on weekdays
 ```
 
 ## Testing
