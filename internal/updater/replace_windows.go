@@ -9,7 +9,7 @@ import (
 )
 
 // replaceBinary replaces dst with src on Windows, where the OS locks running
-// executables. The current binary is first moved to dst+".old" to vacate its
+// binaries. The current binary is first moved to dst+".old" to vacate its
 // path, then src is renamed into place. If the second rename fails, we attempt
 // to restore dst from the backup.
 func replaceBinary(src, dst string) error {
