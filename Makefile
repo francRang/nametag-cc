@@ -3,7 +3,7 @@ APP     := nametag
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS := -ldflags "-X $(MODULE)/internal/version.Version=$(VERSION) -s -w"
 
-.PHONY: build test release checksums
+.PHONY: build build-relay test release checksums
 
 build:
 	@mkdir -p bin
@@ -19,6 +19,10 @@ release:
 	GOOS=darwin  GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP)-darwin-amd64       ./cmd/nametag
 	GOOS=darwin  GOARCH=arm64 go build $(LDFLAGS) -o dist/$(APP)-darwin-arm64       ./cmd/nametag
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(APP)-windows-amd64.exe  ./cmd/nametag
+
+build-relay:
+	@mkdir -p bin
+	go build -o bin/relay ./cmd/relay
 
 checksums:
 	cd dist && sha256sum $(APP)-* > checksums.txt

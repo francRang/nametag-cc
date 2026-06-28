@@ -19,6 +19,7 @@ import (
 func main() {
 	interval := flag.Duration("interval", time.Hour, "how often to poll for updates (e.g. 30s, 5m, 1h)")
 	cronExpr := flag.String("cron", "", `cron expression for update schedule (e.g. "0 * * * *")`)
+	relayURL := flag.String("relay", "", "relay server URL for instant update notifications (e.g. http://relay:8080)")
 	flag.Parse()
 
 	// Detect which flags were explicitly provided so we can enforce mutual exclusion.
@@ -89,6 +90,15 @@ func main() {
 	} else {
 		upd.RunBackground(ctx, *interval)
 		logger.Info("running", "version", version.Version, "update_interval", interval)
+	}
+
+	if *relayURL != "" {
+		subscribeRelay(ctx, *relayURL, logger, func() {
+			if err := upd.CheckAndUpdate(ctx); err != nil {
+				logger.Warn("relay-triggered update check failed", "error", err)
+			}
+		})
+		logger.Info("relay subscription active", "url", *relayURL)
 	}
 
 	ticker := time.NewTicker(30 * time.Second)

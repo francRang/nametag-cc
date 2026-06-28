@@ -63,6 +63,31 @@ The release must include assets named:
 
 Plus a `checksums.txt` (SHA-256) for integrity verification.
 
+## Relay server (optional)
+
+For instant updates the moment a release is published, run the relay server
+on any machine with a public IP and point a GitHub webhook at it.
+
+**Run the relay:**
+```bash
+make build-relay
+WEBHOOK_SECRET=<secret> bin/relay -addr :8080
+```
+
+**Configure the GitHub webhook** (`Settings → Webhooks → Add webhook`):
+- Payload URL: `https://<your-host>:8080/webhook`
+- Content type: `application/json`
+- Secret: the same value as `WEBHOOK_SECRET`
+- Events: `Releases` only
+
+**Run nametag with the relay:**
+```bash
+nametag -relay http://<your-host>:8080
+```
+
+The `-relay` flag works alongside `-interval`/`-cron` as a fallback — if the
+relay goes down, polling continues to catch updates.
+
 ## Flags
 
 | Flag | Default | Description |
