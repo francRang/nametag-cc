@@ -12,8 +12,8 @@ codebase. Read it before making changes.
    atomically replaces the running binary, and restarts the process
 4. If not: continues running normally
 
-The update check runs on a schedule (-interval or -cron) and instantly via the
-relay server (-relay). There is no startup check.
+The update check runs on startup, on a schedule (-interval or -cron), and
+instantly via the relay server (-relay).
 
 ## Architecture
 

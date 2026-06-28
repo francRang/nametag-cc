@@ -67,10 +67,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Startup check. If an update is found the process is replaced and
-	// restarted here; the lines below are never reached.
+	// Check for an update on startup. If one is found the process is replaced
+	// and restarted here; the lines below are never reached.
+	// A failed check is non-fatal; being offline shouldn't stop the program.
 	if err := upd.CheckAndUpdate(ctx); err != nil {
-		logger.Warn("update check failed", "error", err)
+		logger.Warn("startup update check failed", "error", err)
 	}
 
 	// Schedule background checks using whichever mode was requested.
@@ -94,9 +95,31 @@ func main() {
 
 	if *relayURL != "" {
 		subscribeRelay(ctx, *relayURL, logger, func() {
-			if err := upd.CheckAndUpdate(ctx); err != nil {
-				logger.Warn("relay-triggered update check failed", "error", err)
+			// The webhook fires when the release is published, but CI still needs
+			// time to build and upload the binaries. Retry with a fixed delay to
+			// give the pipeline time to finish.
+			delays := []time.Duration{0, time.Minute, time.Minute, time.Minute, time.Minute, time.Minute, time.Minute, time.Minute, time.Minute}
+			for attempt, delay := range delays {
+				if delay > 0 {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(delay):
+					}
+				}
+				if err := upd.CheckAndUpdate(ctx); err != nil {
+					logger.Warn("relay-triggered update check failed",
+						"error", err,
+						"attempt", attempt+1,
+						"of", len(delays))
+					if attempt+1 < len(delays) {
+						logger.Info("retrying in 1m")
+					}
+					continue
+				}
+				return
 			}
+			logger.Warn("relay-triggered update exhausted retries; will catch up on next poll interval")
 		})
 		logger.Info("relay subscription active", "url", *relayURL)
 	}
