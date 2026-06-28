@@ -2,6 +2,8 @@
 
 - Program will be written in Go, this is what I am familiar with and I know for a fact it supports multiple-architecture/OS's with `GOOS GOARCH` variables set when executing `go build`.
 - Program supports crontab and interval pull updates
+- Program supports GH Webook + Relay server that listens for events and client that updates the program
+- I am using ngrok to forward my localhost to a public IP that handles TLS + deploys the relay server that the GH webhook publishes to.
 
 # Questions
 
@@ -24,5 +26,6 @@
 
 * What should the program do?
 - I think this should be minimalistic, as long as it prints the version change on update for PoC, that's fine.
-* Should the program only upgrade at startup or during execution?
-- Both, I think adding interval and crontab support makes sense if this was a daemon program.
+* How should the program upgrade during execution?
+- I think adding interval and crontab support makes sense if this was a daemon program. It also makes things easier depending on the environment where it lives (egress/ingress restrictions, firewall).
+- It should also have a webhook functionality that allows the program to get a release as soon as it published without relying on timing.

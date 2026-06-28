@@ -12,7 +12,8 @@ codebase. Read it before making changes.
    atomically replaces the running binary, and restarts the process
 4. If not: continues running normally
 
-The update check happens once at startup. There is no background polling.
+The update check runs on a schedule (-interval or -cron) and instantly via the
+relay server (-relay). There is no startup check.
 
 ## Architecture
 
