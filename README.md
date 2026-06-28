@@ -63,6 +63,62 @@ The release must include assets named:
 
 Plus a `checksums.txt` (SHA-256) for integrity verification.
 
+## Local development guide
+
+This walks through running the full stack locally using ngrok so GitHub can
+reach your machine without deploying anything.
+
+**Prerequisites:** [ngrok account](https://ngrok.com) (free), ngrok installed and authenticated.
+
+**1. Build the binaries**
+```bash
+make build-relay
+make build VERSION=1.0.0
+cp bin/nametag ~/.local/bin/nametag
+```
+
+**2. Start the relay**
+```bash
+WEBHOOK_SECRET=mysecret bin/relay -addr :9000
+```
+
+**3. Start ngrok** (separate terminal)
+```bash
+ngrok http 9000
+```
+Copy the `https://` URL it prints.
+
+**4. Configure the GitHub webhook**
+
+Go to `github.com/francRang/nametag-cc` → Settings → Webhooks → Add webhook:
+- **Payload URL**: `https://<your-ngrok-url>/webhook`
+- **Content type**: `application/json`
+- **Secret**: `mysecret`
+- **Events**: Releases only
+
+GitHub sends a ping immediately — check the relay logs for a request.
+
+**5. Run nametag** (separate terminal)
+```bash
+nametag -relay http://localhost:9000
+```
+
+**6. Publish a release on GitHub**
+
+The relay will receive the webhook, notify the client, and nametag will
+download and apply the update. If the CI pipeline hasn't finished uploading
+binaries yet, the client retries every minute for up to 8 minutes.
+
+**7. Stopping everything**
+
+- `Ctrl+C` the nametag process
+- `Ctrl+C` the relay
+- `Ctrl+C` ngrok — the public URL is immediately invalidated
+- Optionally delete or disable the webhook in GitHub settings so it stops
+  trying to POST to the now-dead URL
+
+---
+
 ## Relay server (optional)
 
 For instant updates the moment a release is published, run the relay server
